@@ -64,9 +64,9 @@ namespace psiotr
 ConfigDialog::ConfigDialog(OtrMessaging* otr, OtrCallback* optionHost,
                            QWidget* parent)
     : QWidget(parent),
+      m_otr(otr),
       FOptionsManager(PluginHelper::pluginInstance<IOptionsManager>()),
-      FAccountManager(PluginHelper::pluginInstance<IAccountManager>()),
-      m_otr(otr)
+      FAccountManager(PluginHelper::pluginInstance<IAccountManager>())
 {
     Q_UNUSED(optionHost);
 
@@ -94,9 +94,9 @@ ConfigOtrWidget::ConfigOtrWidget(
                                  OtrMessaging* otr,
                                  QWidget* parent)
     : QWidget(parent),
-      FOptionsManager(PluginHelper::pluginInstance<IOptionsManager>()),
+      m_otr(otr),
+      FOptionsManager(PluginHelper::pluginInstance<IOptionsManager>())
       //m_optionHost(optionHost),
-      m_otr(otr)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
 
@@ -358,14 +358,14 @@ void FingerprintWidget::contextMenu(const QPoint& pos)
 //                             OtrMessaging* otr, QWidget* parent)
 PrivKeyWidget::PrivKeyWidget(OtrMessaging* otr, QWidget* parent)
     : QWidget(parent),
-      FOptionsManager(PluginHelper::pluginInstance<IOptionsManager>()),
-      FPresenceManager(PluginHelper::pluginInstance<IPresenceManager>()),
-      FAccountManager(PluginHelper::pluginInstance<IAccountManager>()),
-      //m_accountInfo(accountInfo),
       m_otr(otr),
       m_table(new QTableView(this)),
       m_tableModel(new QStandardItemModel(this)),
-      m_keys()
+      m_keys(),
+      FOptionsManager(PluginHelper::pluginInstance<IOptionsManager>()),
+      FPresenceManager(PluginHelper::pluginInstance<IPresenceManager>()),
+      FAccountManager(PluginHelper::pluginInstance<IAccountManager>())
+      //m_accountInfo(accountInfo),
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
 

@@ -21,13 +21,13 @@ namespace psiotr
 #define SHC_MESSAGE         "/message"
 
 OtrPlugin::OtrPlugin() :
+    m_otrConnection(NULL),
+    m_onlineUsers(),
     FOptionsManager(NULL),
     FAccountManager(NULL),
     FMessageProcessor(NULL),
-    m_otrConnection(NULL),
     m_inboundCatcher(NULL),
-    m_outboundCatcher(NULL),
-    m_onlineUsers()
+    m_outboundCatcher(NULL)
 {
 }
 

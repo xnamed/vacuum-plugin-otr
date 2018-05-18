@@ -1,0 +1,7 @@
+#ifndef DEF_OPTIONNODEORDERS_H
+#define DEF_OPTIONNODEORDERS_H
+
+// ROOT
+#define ONO_OTR                   1050
+
+#endif // DEF_OPTIONNODEORDERS_H

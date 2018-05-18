@@ -158,7 +158,7 @@ bool OtrPlugin::initSettings()
     Options::setDefaultValue(OPTION_END_WHEN_OFFLINE, DEFAULT_END_WHEN_OFFLINE);
     if (FOptionsManager)
     {
-        IOptionsDialogNode otrNode = { OWO_MISC_OTR, OPN_MISC_OTR, MNI_OTR, tr("OTR") };
+        IOptionsDialogNode otrNode = { ONO_OTR, OPN_OTR, MNI_OTR_ENCRYPTED, tr("OTR Messaging") };
         FOptionsManager->insertOptionsDialogNode(otrNode);
         FOptionsManager->insertOptionsDialogHolder(this);
     }
@@ -169,10 +169,10 @@ QMultiMap<int, IOptionsDialogWidget *> OtrPlugin::optionsDialogWidgets(const QSt
 {
     Q_UNUSED(AParent);
     QMultiMap<int, IOptionsDialogWidget *> widgets;
-    if (ANodeId == OPN_MISC_OTR)
+    if (ANodeId == OPN_OTR)
     {
         QWidget* cfgd = new ConfigDialog(m_otrConnection, this);
-        widgets.insertMulti(OWO_MISC_OTR, new OptionsWidget(cfgd, 0));
+        widgets.insertMulti(ONO_OTR, new OptionsWidget(cfgd, 0));
     }
     return widgets;
 }
@@ -221,84 +221,18 @@ void OtrPlugin::onMessageWindowDestroyed(IMessageWindow *)
 
 void OtrPlugin::onChatWindowCreated(IMessageChatWindow *AWindow)
 {
-    if (AWindow && AWindow->editWidget() && AWindow->toolBarWidget())
-    {// skip history windows
-        insertToolBarAction(AWindow->toolBarWidget());
-
-     //   updateContexts();
-    }
+    QString account = FAccountManager->findAccountByStream(AWindow->streamJid())->accountId().toString();
+    QString contact = AWindow->contactJid().uFull();
+    OtrStateWidget *widget = new OtrStateWidget(m_otrConnection,AWindow, account, contact,
+                                          AWindow->toolBarWidget()->toolBarChanger()->toolBar());
+    AWindow->toolBarWidget()->toolBarChanger()->insertWidget(widget,TBG_MWTBW_CHATSTATES);
+    widget->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    widget->setPopupMode(QToolButton::InstantPopup);
 }
 
 void OtrPlugin::onChatWindowDestroyed(IMessageChatWindow *AWindow)
 {
-    IMessageToolBarWidget* tbw = AWindow->toolBarWidget();
-    if (!tbw)
-        return;
-    if (m_actions.contains(tbw))
-    {
-        Action* act = m_actions.value(tbw);
-        m_actions.remove(tbw);
 
-        if (!act)
-            return;
-        if (m_buttons.contains(act))
-        {
-            m_buttons.remove(act);
-        }
-    }
-}
-
-void OtrPlugin::insertToolBarAction( IMessageToolBarWidget *AWidget )
-{
-    // TODO: XXX:
-    if (m_actions.value(AWidget) == NULL)
-    {
-        Action *action = NULL;
-
-        action = new Action(AWidget->toolBarChanger()->toolBar());
-        //action->setIcon(RSR_STORAGE_MENUICONS, MNI_FILETRANSFER_SEND);
-        action->setText(tr("OTR Status"));
-        connect(action,SIGNAL(triggered(bool)),SLOT(onOtrMenuclicked(bool)));
-        QToolButton* b = AWidget->toolBarChanger()->insertAction(action,TBG_MWTBW_CHATSTATES);
-        m_actions.insert(AWidget, action);
-        m_buttons.insert(action, b);
-    }
-}
-
-void OtrPlugin::onOtrMenuclicked(bool)
-{
-    Action *action = qobject_cast<Action *>(sender());
-    if (action)
-    {
-        IMessageToolBarWidget *widget = m_actions.key(action);
-        if (!widget)
-            return;
-
-        IMessageEditWidget* ew = widget->editWidget();
-        if (ew)
-        {
-            QMenu* menu = new QMenu(0);
-            QAction* aStatus = new QAction(menu);
-            aStatus->setEnabled(false);
-
-            menu->addAction(aStatus);
-
-            QString account = FAccountManager->findAccountByStream(ew->streamJid())->accountId().toString();
-            QString contact = ew->contactJid().full();
-        /*    if (!m_onlineUsers.value(account).contains(contact))
-            {
-                m_onlineUsers[account][contact] = new PsiOtrClosure(account,
-                                                                    contact,
-                                                                    m_otrConnection);
-            }
-        */
-            //return 
-            //m_onlineUsers[account][contact]->getChatDlgMenu(action);
-
-            QString otrstate = m_otrConnection->getMessageStateString(account, contact);
-            aStatus->setText(QString("%1").arg(otrstate));
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------

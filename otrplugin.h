@@ -13,11 +13,16 @@
 
 #include <utils/message.h>
 
+#include "definitions/menuicons.h"
+#include "definitions/optionnodes.h"
+#include "definitions/optionnodeorders.h"
+
 #include "otrmessaging.h"
 #include "psiotrconfig.h"
 #include "optionswidget.h"
 
 #include "stanza_catchers.h"
+#include "otrstatewidget.h"
 
 class QToolButton;
 class QAction;
@@ -30,9 +35,6 @@ class Action;
 class IMessageWindow;
 class IMessageChatWindow;
 
-#define OPN_MISC_OTR         "OTRPAGE"
-#define OWO_MISC_OTR         656
-#define MNI_OTR         "otr"
 #define OTRE2E_UUID "{8592e3c3-ef5e-42a9-91c9-faf1ed9a91c5}"
 
 namespace psiotr
@@ -101,13 +103,9 @@ public:
     virtual QString humanContact(const QString& accountId,
                                  const QString &AContactJid);
 
-    //virtual void updateContexts();
-
 private:
 	void onStreamOpened(IXmppStream *AXmppStream);
 	void onStreamClosed(IXmppStream *AXmppStream);
-
-	void insertToolBarAction(IMessageToolBarWidget *AWidget);
 protected:
 	void notifyInChatWindow(const Jid &AStreamJid, const Jid &AContactJid, const QString &AMessage) const;
 

@@ -28,6 +28,8 @@
 #include <QHash>
 #include <QString>
 
+#include <utils/jid.h>
+
 class OtrInternal;
 
 // ---------------------------------------------------------------------------
@@ -94,6 +96,8 @@ enum OtrNotifyType
 class OtrCallback
 {
 public:
+    virtual QObject *instance() =0;
+
     virtual QString dataDir() = 0;
 
     virtual OtrPolicy policy() const = 0;
@@ -126,6 +130,9 @@ public:
     virtual QString humanAccountPublic(const QString& accountId) = 0;
     virtual QString humanContact(const QString& accountId,
                                  const QString& contact) = 0;
+    virtual void authenticateContact(const QString &account, const QString &contact) =0;
+protected:
+    virtual void otrStateChanged(const Jid &AStreamJid, const Jid &AContactJid) const =0;
 };
 
 // ---------------------------------------------------------------------------

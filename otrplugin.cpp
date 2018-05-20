@@ -202,7 +202,7 @@ void OtrPlugin::onStreamClosed( IXmppStream *AXmppStream )
         {
             m_otrConnection->endSession(account, contact);
             m_onlineUsers[account][contact]->setIsLoggedIn(false);
-            m_onlineUsers[account][contact]->updateMessageState();
+            //m_onlineUsers[account][contact]->updateMessageState();
         }
     }
 }
@@ -223,7 +223,7 @@ void OtrPlugin::onChatWindowCreated(IMessageChatWindow *AWindow)
 {
     QString account = FAccountManager->findAccountByStream(AWindow->streamJid())->accountId().toString();
     QString contact = AWindow->contactJid().uFull();
-    OtrStateWidget *widget = new OtrStateWidget(m_otrConnection,AWindow, account, contact,
+    OtrStateWidget *widget = new OtrStateWidget(this, m_otrConnection,AWindow, account, contact,
                                           AWindow->toolBarWidget()->toolBarChanger()->toolBar());
     AWindow->toolBarWidget()->toolBarChanger()->insertWidget(widget,TBG_MWTBW_CHATSTATES);
     widget->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -237,11 +237,26 @@ void OtrPlugin::onChatWindowDestroyed(IMessageChatWindow *AWindow)
 
 //-----------------------------------------------------------------------------
 
+void OtrPlugin::authenticateContact(const QString &account, const QString &contact)
+{
+    if (!m_onlineUsers.value(account).contains(contact))
+    {
+        m_onlineUsers[account][contact] = new PsiOtrClosure(account,
+                                                            contact,
+                                                            m_otrConnection);
+    }
+    m_onlineUsers[account][contact]->authenticateContact();
+}
+
+//-----------------------------------------------------------------------------
+
 OtrPolicy OtrPlugin::policy() const
 {
     QVariant policyOption = Options::node(OPTION_POLICY).value();
     return static_cast<OtrPolicy>(policyOption.toInt());
 }
+
+//-----------------------------------------------------------------------------
 
 void OtrPlugin::optionChanged(const QString&)
 {
@@ -323,8 +338,6 @@ void OtrPlugin::stateChange(const QString &account, const QString &contact,
                                                             m_otrConnection);
     }
 
-    m_onlineUsers[account][contact]->updateMessageState();
-
     bool verified  = m_otrConnection->isVerified(account, contact);
     bool encrypted = m_onlineUsers[account][contact]->encrypted();
     QString msg;
@@ -369,7 +382,7 @@ void OtrPlugin::stateChange(const QString &account, const QString &contact,
 
     Jid contactJid(contact);
     notifyInChatWindow(FAccountManager->findAccountById(account)->streamJid(),contactJid, msg);
-    //emit otrStateChanged(AStreamJid,AContactJid,AState);
+    emit otrStateChanged(FAccountManager->findAccountById(account)->streamJid(),contactJid);
 }
 
 //-----------------------------------------------------------------------------
@@ -475,7 +488,8 @@ bool OtrPlugin::stanzaReadWrite(int AHandlerId, const Jid &AStreamJid, Stanza &A
                         m_otrConnection->expireSession(account, contact);
                     }
                     m_onlineUsers[account][contact]->setIsLoggedIn(false);
-                    m_onlineUsers[account][contact]->updateMessageState();
+                    Jid contactJid(AStanza.from());
+                    emit otrStateChanged(AStreamJid,contactJid);
                 }
             }
         }

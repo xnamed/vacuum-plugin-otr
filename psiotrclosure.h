@@ -93,6 +93,36 @@ private slots:
 
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+
+class PsiOtrClosure : public QObject
+{
+    Q_OBJECT
+
+public:
+    PsiOtrClosure(const QString& account, const QString& contact,
+                  OtrMessaging* otrc);
+    ~PsiOtrClosure();
+    void setIsLoggedIn(bool isLoggedIn);
+    bool isLoggedIn() const;
+    bool encrypted() const;
+    void receivedSMP(const QString& question);
+    void updateSMP(int progress);
+    void authenticateContact();
+
+private:
+    OtrMessaging* m_otr;
+    QString       m_account;
+    QString       m_contact;
+    bool          m_isLoggedIn;
+    AuthenticationDialog* m_authDialog;
+
+public slots:
+    void finishAuth();
+};
+
+//-----------------------------------------------------------------------------
+
 } // namespace psiotr
 
 #endif

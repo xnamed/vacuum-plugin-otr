@@ -8,13 +8,13 @@
 namespace psiotr
 {
 
-OtrStateWidget::OtrStateWidget(OtrMessaging* otrc, IMessageWindow *AWindow,
-	                           const QString &account, const QString &contact, QWidget *AParent)
+OtrStateWidget::OtrStateWidget(OtrCallback* callback, OtrMessaging* otrc, IMessageWindow *AWindow,
+                               const QString &account, const QString &contact, QWidget *AParent)
 	: QToolButton(AParent),
+      m_callback(callback),
       m_otr(otrc),
       m_account(account),
-      m_contact(contact),
-      m_authDialog(0)
+      m_contact(contact)
 {
 	FWindow = AWindow;
 
@@ -61,8 +61,9 @@ OtrStateWidget::OtrStateWidget(OtrMessaging* otrc, IMessageWindow *AWindow,
     setToolTip(tr("OTR Messaging"));
 
 	connect(FWindow->address()->instance(),SIGNAL(addressChanged(const Jid &, const Jid &)),SLOT(onWindowAddressChanged(const Jid &, const Jid &)));
+    connect(m_callback->instance(),SIGNAL(otrStateChanged(const Jid &, const Jid &)),SLOT(onUpdateMessageState(const Jid &, const Jid &)));
 
-	updateMessageState()
+	onUpdateMessageState(FWindow->streamJid(),FWindow->contactJid());
 }
 
 OtrStateWidget::~OtrStateWidget()
@@ -73,10 +74,10 @@ OtrStateWidget::~OtrStateWidget()
 void OtrStateWidget::onWindowAddressChanged(const Jid &AStreamBefore, const Jid &AContactBefore)
 {
 	Q_UNUSED(AStreamBefore); Q_UNUSED(AContactBefore);
-	updateMessageState();
+	onUpdateMessageState(FWindow->streamJid(),FWindow->contactJid());
 }
 
-void OtrStateWidget::updateMessageState()
+void OtrStateWidget::onUpdateMessageState(const Jid &AStreamJid, const Jid &AContactJid)
 {
     QString iconKey;
     OtrMessageState state = m_otr->getMessageState(m_account, m_contact);
@@ -147,63 +148,7 @@ void OtrStateWidget::initiateSession(bool b)
 
 void OtrStateWidget::authenticateContact(bool)
 {
-    if (m_authDialog || !encrypted())
-    {
-        return;
-    }
-
-    m_authDialog = new AuthenticationDialog(m_otr,
-                                            m_account, m_contact,
-                                            QString(), true);
-
-    connect(m_authDialog, SIGNAL(destroyed()),
-            this, SLOT(finishAuth()));
-
-    m_authDialog->show();
-}
-
-//-----------------------------------------------------------------------------
-
-void OtrStateWidget::receivedSMP(const QString& question)
-{
-    if ((m_authDialog && !m_authDialog->finished()) || !encrypted())
-    {
-        m_otr->abortSMP(m_account, m_contact);
-        return;
-    }
-    if (m_authDialog)
-    {
-        disconnect(m_authDialog, SIGNAL(destroyed()),
-                   this, SLOT(finishAuth()));
-        finishAuth();
-    }
-
-    m_authDialog = new AuthenticationDialog(m_otr, m_account, m_contact, question, false);
-
-    connect(m_authDialog, SIGNAL(destroyed()),
-            this, SLOT(finishAuth()));
-
-    m_authDialog->show();
-}
-
-//-----------------------------------------------------------------------------
-
-void OtrStateWidget::updateSMP(int progress)
-{
-    if (m_authDialog)
-    {
-        m_authDialog->updateSMP(progress);
-        m_authDialog->show();
-    }
-}
-
-//-----------------------------------------------------------------------------
-
-void OtrStateWidget::finishAuth()
-{
-    m_authDialog = 0;
-
-    updateMessageState();
+    m_callback->authenticateContact(m_account, m_contact);
 }
 
 //-----------------------------------------------------------------------------
@@ -234,7 +179,7 @@ void OtrStateWidget::endSession(bool b)
 {
     Q_UNUSED(b);
     m_otr->endSession(m_account, m_contact);
-    updateMessageState();
+    onUpdateMessageState(FWindow->streamJid(),FWindow->contactJid());
 }
 
 //-----------------------------------------------------------------------------
@@ -253,13 +198,6 @@ void OtrStateWidget::fingerprint(bool)
     m_otr->displayOtrMessage(m_account, m_contact, msg);
 }
 
-//-----------------------------------------------------------------------------
-
-bool OtrStateWidget::encrypted() const
-{
-    return m_otr->getMessageState(m_account, m_contact) ==
-           OTR_MESSAGESTATE_ENCRYPTED;
-}
 //-----------------------------------------------------------------------------
 
 } // namespace

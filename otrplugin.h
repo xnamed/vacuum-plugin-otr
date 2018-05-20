@@ -102,6 +102,9 @@ public:
     virtual QString humanAccountPublic(const QString& accountId);
     virtual QString humanContact(const QString& accountId,
                                  const QString &AContactJid);
+    virtual void authenticateContact(const QString &account, const QString &contact);
+signals:
+	void otrStateChanged(const Jid &AStreamJid, const Jid &AContactJid) const;
 
 private:
 	void onStreamOpened(IXmppStream *AXmppStream);
@@ -116,8 +119,6 @@ private slots:
 	void onMessageWindowDestroyed(IMessageWindow *AWindow);
 	void onChatWindowCreated(IMessageChatWindow *AWindow);
 	void onChatWindowDestroyed(IMessageChatWindow *AWindow);
-
-	void onOtrMenuclicked(bool);
 
 private:
 	OtrMessaging* m_otrConnection;

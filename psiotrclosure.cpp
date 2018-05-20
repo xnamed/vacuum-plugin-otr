@@ -465,4 +465,107 @@ void AuthenticationDialog::notify(const QMessageBox::Icon icon,
 
 //-----------------------------------------------------------------------------
 
+PsiOtrClosure::PsiOtrClosure(const QString& account, const QString& contact,
+                             OtrMessaging* otrc)
+    : m_otr(otrc),
+      m_account(account),
+      m_contact(contact),
+      m_isLoggedIn(false),
+      m_authDialog(0)
+{
+}
+
+//-----------------------------------------------------------------------------
+
+PsiOtrClosure::~PsiOtrClosure()
+{
+}
+
+//-----------------------------------------------------------------------------
+
+void PsiOtrClosure::authenticateContact()
+{
+    if (m_authDialog || !encrypted())
+    {
+        return;
+    }
+
+    m_authDialog = new AuthenticationDialog(m_otr,
+                                            m_account, m_contact,
+                                            QString(), true);
+
+    connect(m_authDialog, SIGNAL(destroyed()),
+            this, SLOT(finishAuth()));
+
+    m_authDialog->show();
+}
+
+//-----------------------------------------------------------------------------
+
+void PsiOtrClosure::receivedSMP(const QString& question)
+{
+    if ((m_authDialog && !m_authDialog->finished()) || !encrypted())
+    {
+        m_otr->abortSMP(m_account, m_contact);
+        return;
+    }
+    if (m_authDialog)
+    {
+        disconnect(m_authDialog, SIGNAL(destroyed()),
+                   this, SLOT(finishAuth()));
+        finishAuth();
+    }
+
+    m_authDialog = new AuthenticationDialog(m_otr, m_account, m_contact, question, false);
+
+    connect(m_authDialog, SIGNAL(destroyed()),
+            this, SLOT(finishAuth()));
+
+    m_authDialog->show();
+}
+
+//-----------------------------------------------------------------------------
+
+void PsiOtrClosure::updateSMP(int progress)
+{
+    if (m_authDialog)
+    {
+        m_authDialog->updateSMP(progress);
+        m_authDialog->show();
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void PsiOtrClosure::finishAuth()
+{
+    m_authDialog = 0;
+
+    //updateMessageState();
+}
+
+//-----------------------------------------------------------------------------
+
+void PsiOtrClosure::setIsLoggedIn(bool isLoggedIn)
+{
+    m_isLoggedIn = isLoggedIn;
+}
+
+//-----------------------------------------------------------------------------
+
+bool PsiOtrClosure::isLoggedIn() const
+{
+    return m_isLoggedIn;
+}
+
+//-----------------------------------------------------------------------------
+
+bool PsiOtrClosure::encrypted() const
+{
+    return m_otr->getMessageState(m_account, m_contact) ==
+           OTR_MESSAGESTATE_ENCRYPTED;
+}
+
+//-----------------------------------------------------------------------------
+
 } // namespace

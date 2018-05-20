@@ -79,60 +79,66 @@ void OtrStateWidget::onWindowAddressChanged(const Jid &AStreamBefore, const Jid 
 
 void OtrStateWidget::onUpdateMessageState(const Jid &AStreamJid, const Jid &AContactJid)
 {
-    QString iconKey;
-    OtrMessageState state = m_otr->getMessageState(m_account, m_contact);
-
-    QString stateString(m_otr->getMessageStateString(m_account,
-                                                     m_contact));
-
-    if (state == OTR_MESSAGESTATE_ENCRYPTED)
+    if (FWindow->streamJid()==AStreamJid && FWindow->contactJid()==AContactJid.full())
     {
-        if (m_otr->isVerified(m_account, m_contact))
+        QString iconKey;
+        OtrMessageState state = m_otr->getMessageState(m_account, m_contact);
+
+        QString stateString(m_otr->getMessageStateString(m_account,
+                                                         m_contact));
+
+        if (state == OTR_MESSAGESTATE_ENCRYPTED)
         {
-            iconKey = MNI_OTR_ENCRYPTED;
+            if (m_otr->isVerified(m_account, m_contact))
+            {
+            //    m_chatDlgAction->setIcon(QIcon(":/otrplugin/otr_yes.png"));
+                iconKey = MNI_OTR_ENCRYPTED;
+            }
+            else
+            {
+            //    m_chatDlgAction->setIcon(QIcon(":/otrplugin/otr_unverified.png"));
+                iconKey = MNI_OTR_UNVERFIFIED;
+                stateString += ", " + tr("unverified");
+            }
         }
         else
         {
-            iconKey = MNI_OTR_UNVERFIFIED;
-            stateString += ", " + tr("unverified");
+            iconKey = MNI_OTR_NO;
+        //    m_chatDlgAction->setIcon(QIcon(":/otrplugin/otr_no.png"));
         }
-    }
-    else
-    {
-        iconKey = MNI_OTR_NO;
-    }
 
-    setText(tr("OTR Messaging [%1]").arg(stateString));
-    IconStorage::staticStorage(RSR_STORAGE_MENUICONS)->insertAutoIcon(this,iconKey);
+        setText(tr("OTR Messaging [%1]").arg(stateString));
+        IconStorage::staticStorage(RSR_STORAGE_MENUICONS)->insertAutoIcon(this,iconKey);
 
-    if (state == OTR_MESSAGESTATE_ENCRYPTED)
-    {
-        m_startSessionAction->setText(tr("Refre&sh private conversation"));
-        m_authenticateAction->setEnabled(true);
-        m_sessionIdAction->setEnabled(true);
-        m_endSessionAction->setEnabled(true);
-    }
-    else
-    {
-        m_startSessionAction->setText(tr("&Start private conversation"));
-        if (state == OTR_MESSAGESTATE_PLAINTEXT)
+        if (state == OTR_MESSAGESTATE_ENCRYPTED)
         {
-            m_authenticateAction->setEnabled(false);
-            m_sessionIdAction->setEnabled(false);
+            m_startSessionAction->setText(tr("Refre&sh private conversation"));
+            m_authenticateAction->setEnabled(true);
+            m_sessionIdAction->setEnabled(true);
+            m_endSessionAction->setEnabled(true);
+        }
+        else
+        {
+            m_startSessionAction->setText(tr("&Start private conversation"));
+            if (state == OTR_MESSAGESTATE_PLAINTEXT)
+            {
+                m_authenticateAction->setEnabled(false);
+                m_sessionIdAction->setEnabled(false);
+                m_endSessionAction->setEnabled(false);
+            }
+            else // finished, unknown
+            {
+                m_endSessionAction->setEnabled(true);
+                m_authenticateAction->setEnabled(false);
+                m_sessionIdAction->setEnabled(false);
+            }
+        }
+
+        if (m_otr->getPolicy() < OTR_POLICY_ENABLED)
+        {
+            m_startSessionAction->setEnabled(false);
             m_endSessionAction->setEnabled(false);
         }
-        else // finished, unknown
-        {
-            m_endSessionAction->setEnabled(true);
-            m_authenticateAction->setEnabled(false);
-            m_sessionIdAction->setEnabled(false);
-        }
-    }
-
-    if (m_otr->getPolicy() < OTR_POLICY_ENABLED)
-    {
-        m_startSessionAction->setEnabled(false);
-        m_endSessionAction->setEnabled(false);
     }
 }
 

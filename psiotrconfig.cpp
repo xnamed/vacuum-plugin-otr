@@ -85,6 +85,21 @@ ConfigDialog::ConfigDialog(OtrMessaging* otr, OtrCallback* optionHost,
 
     mainLayout->addWidget(tabWidget);
     setLayout(mainLayout);
+
+    QVBoxLayout *vltLayout = new QVBoxLayout(this);
+    vltLayout->setSpacing(0);
+    vltLayout->setMargin(0);
+    vltLayout->addWidget(this);
+}
+
+void ConfigDialog::apply()
+{
+    emit childApply();
+}
+
+void ConfigDialog::reset()
+{
+    emit childReset();
 }
 
 //=============================================================================

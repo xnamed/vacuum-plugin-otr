@@ -25,6 +25,7 @@ OtrPlugin::OtrPlugin() :
     m_onlineUsers(),
     FOptionsManager(NULL),
     FAccountManager(NULL),
+    FPresenceManager(NULL),
     FMessageProcessor(NULL),
     m_inboundCatcher(NULL),
     m_outboundCatcher(NULL)
@@ -61,6 +62,16 @@ bool OtrPlugin::initConnections(IPluginManager *APluginManager, int &AInitOrder)
         FStanzaProcessor = qobject_cast<IStanzaProcessor *>(plugin->instance());
     }
 
+    plugin = APluginManager->pluginInterface("IPresenceManager").value(0);
+    if (plugin)
+    {
+        FPresenceManager = qobject_cast<IPresenceManager *>(plugin->instance());
+        if (FPresenceManager)
+        {
+            connect(FPresenceManager->instance(),SIGNAL(presenceOpened(IPresence *)),SLOT(onPresenceOpened(IPresence *)));
+        }
+    }
+
     plugin = APluginManager->pluginInterface("IXmppStreamManager").value(0,NULL);
     if (plugin)
     {
@@ -74,7 +85,13 @@ bool OtrPlugin::initConnections(IPluginManager *APluginManager, int &AInitOrder)
 
     plugin = APluginManager->pluginInterface("IOptionsManager").value(0,NULL);
     if (plugin)
+    {
         FOptionsManager = qobject_cast<IOptionsManager *>(plugin->instance());
+        if (FOptionsManager)
+        {
+            connect(FOptionsManager->instance(),SIGNAL(profileOpened(const QString &)),SLOT(onProfileOpened(const QString &)));
+        }
+    }
 
     plugin = APluginManager->pluginInterface("IMessageArchiver").value(0);
     if (plugin)
@@ -101,10 +118,6 @@ bool OtrPlugin::initConnections(IPluginManager *APluginManager, int &AInitOrder)
         }
     }
 
-    m_otrConnection = new OtrMessaging(this, OTR_POLICY_ENABLED);
-    m_inboundCatcher = new InboundStanzaCatcher(m_otrConnection, FAccountManager, this);
-    m_outboundCatcher = new OutboundStanzaCatcher(m_otrConnection, FAccountManager, this);
-
     return (FStanzaProcessor != NULL);
 
     return true;
@@ -117,32 +130,6 @@ bool OtrPlugin::initObjects()
     //    qDebug("archive processor registered");
         FMessageArchiver->insertArchiveHandler(AHO_DEFAULT,this);
     }*/
-    if (FStanzaProcessor)
-    {                       // Insert stanza handles
-        IStanzaHandle shandle;
-        shandle.handler = this;
-        shandle.order = SHO_OTR;
-        shandle.direction = IStanzaHandle::DirectionIn;
-        shandle.conditions.append(SHC_PRESENCE);
-        FSHIPresence = FStanzaProcessor->insertStanzaHandle(shandle);
-        //
-        IStanzaHandle handle_in;
-        handle_in.handler = m_inboundCatcher;
-        handle_in.order = -32767; // SHO
-        handle_in.direction = IStanzaHandle::DirectionIn;
-        //handle_in.streamJid = AXmppStream->streamJid();
-        handle_in.conditions.append(SHC_MESSAGE);
-
-        IStanzaHandle handle_out;
-        handle_out.handler = m_outboundCatcher;
-        handle_out.order = 32767; // SHO
-        handle_out.direction = IStanzaHandle::DirectionOut;
-        //handle_out.streamJid = AXmppStream->streamJid();
-        handle_out.conditions.append(SHC_MESSAGE);
-
-        FSHIMessage = FStanzaProcessor->insertStanzaHandle(handle_in);
-        FSHOMessage = FStanzaProcessor->insertStanzaHandle(handle_out);
-    }
 
     return true;
 }
@@ -233,6 +220,46 @@ void OtrPlugin::onChatWindowCreated(IMessageChatWindow *AWindow)
 void OtrPlugin::onChatWindowDestroyed(IMessageChatWindow *AWindow)
 {
     Q_UNUSED(AWindow)
+}
+
+void OtrPlugin::onProfileOpened(const QString &AProfile)
+{
+    m_homePath = FOptionsManager->profilePath(AProfile);
+    m_otrConnection = new OtrMessaging(this, policy());
+}
+
+void OtrPlugin::onPresenceOpened(IPresence *APresence)
+{
+    Q_UNUSED(APresence)
+    m_inboundCatcher = new InboundStanzaCatcher(m_otrConnection, FAccountManager, this);
+    m_outboundCatcher = new OutboundStanzaCatcher(m_otrConnection, FAccountManager, this);
+
+    if (FStanzaProcessor)
+    {
+        IStanzaHandle shandle;
+        shandle.handler = this;
+        shandle.order = SHO_OTR;
+        shandle.direction = IStanzaHandle::DirectionIn;
+        shandle.conditions.append(SHC_PRESENCE);
+        FSHIPresence = FStanzaProcessor->insertStanzaHandle(shandle);
+        //
+        IStanzaHandle handle_in;
+        handle_in.handler = m_inboundCatcher;
+        handle_in.order = -32767; // SHO
+        handle_in.direction = IStanzaHandle::DirectionIn;
+        //handle_in.streamJid = AXmppStream->streamJid();
+        handle_in.conditions.append(SHC_MESSAGE);
+
+        IStanzaHandle handle_out;
+        handle_out.handler = m_outboundCatcher;
+        handle_out.order = 32767; // SHO
+        handle_out.direction = IStanzaHandle::DirectionOut;
+        //handle_out.streamJid = AXmppStream->streamJid();
+        handle_out.conditions.append(SHC_MESSAGE);
+
+        FSHIMessage = FStanzaProcessor->insertStanzaHandle(handle_in);
+        FSHOMessage = FStanzaProcessor->insertStanzaHandle(handle_out);
+    }
 }
 
 //-----------------------------------------------------------------------------

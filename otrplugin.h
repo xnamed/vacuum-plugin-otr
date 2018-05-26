@@ -4,6 +4,7 @@
 #include <QMultiMap>
 
 #include <interfaces/ipluginmanager.h>
+#include <interfaces/ipresencemanager.h>
 #include <interfaces/istanzaprocessor.h>
 #include <interfaces/ixmppstreammanager.h>
 #include <interfaces/imessagearchiver.h>
@@ -119,6 +120,8 @@ private slots:
 	void onMessageWindowDestroyed(IMessageWindow *AWindow);
 	void onChatWindowCreated(IMessageChatWindow *AWindow);
 	void onChatWindowDestroyed(IMessageChatWindow *AWindow);
+	void onPresenceOpened(IPresence *APresence);
+	void onProfileOpened(const QString &AProfile);
 
 private:
 	OtrMessaging* m_otrConnection;
@@ -127,6 +130,7 @@ private:
 	IStanzaProcessor *FStanzaProcessor;
 	IMessageArchiver *FMessageArchiver;
 	IAccountManager* FAccountManager;
+	IPresenceManager *FPresenceManager;
 	IMessageProcessor* FMessageProcessor;
 	InboundStanzaCatcher* m_inboundCatcher;
 	OutboundStanzaCatcher* m_outboundCatcher;

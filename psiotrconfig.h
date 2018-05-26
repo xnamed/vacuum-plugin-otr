@@ -63,18 +63,15 @@ const QVariant DEFAULT_END_WHEN_OFFLINE = QVariant(false);
 /**
  * This dialog appears in the 'Plugins' section of the Psi configuration.
  */
-class ConfigDialog : public QWidget,
-                     public IOptionsDialogWidget
+class ConfigDialog : public QWidget
 {
-Q_OBJECT;
-Q_INTERFACES(IOptionsDialogWidget);
+Q_OBJECT
 
 public:
 //    ConfigDialog(OtrMessaging* otr, OptionAccessingHost* optionHost,
 //                 AccountInfoAccessingHost* accountInfo,
     ConfigDialog(OtrMessaging* otr, OtrCallback* optionHost,
                  QWidget* parent = 0);
-    virtual QWidget* instance() { return this; }
 
 private:
     OtrMessaging*             m_otr;
@@ -82,13 +79,6 @@ private:
     //AccountInfoAccessingHost* m_accountInfo;
     IOptionsManager *FOptionsManager;
     IAccountManager *FAccountManager;
-public slots:
-    virtual void apply();
-    virtual void reset();
-signals:
-    void modified();
-    void childApply();
-    void childReset();
 };
 
 // ---------------------------------------------------------------------------

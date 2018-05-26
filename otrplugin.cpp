@@ -158,8 +158,7 @@ QMultiMap<int, IOptionsDialogWidget *> OtrPlugin::optionsDialogWidgets(const QSt
     QMultiMap<int, IOptionsDialogWidget *> widgets;
     if (ANodeId == OPN_OTR)
     {
-        QWidget* cfgd = new ConfigDialog(m_otrConnection, this);
-        widgets.insertMulti(ONO_OTR, new OptionsWidget(cfgd, 0));
+        widgets.insertMulti(ONO_OTR, new ConfigDialog(m_otrConnection, this, AParent));
     }
     return widgets;
 }
